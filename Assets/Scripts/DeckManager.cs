@@ -25,13 +25,19 @@ public class DeckManager : MonoBehaviour {
 	
 	void Awake ()
 	{
-		if (dm == null) dm = this;
+		SetPlayer( PlayerPrefs.GetInt ("player") );
 		
-		DontDestroyOnLoad ( this.gameObject );
+		if (dm == null) {
+		
+		dm = this;
+		
+		//DontDestroyOnLoad ( this.gameObject );
+		}
 	}
 	
 	// Use this for initialization
-	void Start () {
+	void Start () 
+	{	
 		Load ();
 		LoadDefaultDeck();
 	}
