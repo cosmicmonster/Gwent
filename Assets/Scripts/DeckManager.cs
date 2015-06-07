@@ -18,6 +18,7 @@ public class DeckManager : MonoBehaviour {
 	
 	public UnityEngine.UI.Text availabelCardsText;
 	public UnityEngine.UI.Text playerCardsText;
+	public UnityEngine.UI.Text playerText;
 	
 	public GameObject prompt;
 	
@@ -38,8 +39,9 @@ public class DeckManager : MonoBehaviour {
 	// Use this for initialization
 	void Start () 
 	{	
-		Load ();
+		LoadPlayerDeck ();
 		LoadDefaultDeck();
+		playerText.text = "PLAYER " + currentPlayer.ToString(); 
 	}
 	
 	// Update is called once per frame
@@ -68,7 +70,7 @@ public class DeckManager : MonoBehaviour {
 	{
 		foreach (BaseCard bc in baseDeck)
 		{
-			if (!IsInPlayerDeck (bc.id))
+			if (!IsInPlayerDeck (bc.id, currentPlayer))
 			{ 
 				GameObject newCard = Instantiate (defaultCard);
 				newCard.transform.SetParent ( availableCardsPanel.transform );
@@ -81,48 +83,68 @@ public class DeckManager : MonoBehaviour {
 		}
 	}
 	
-	bool IsInPlayerDeck (int _id)
+	bool IsInPlayerDeck (int _id, int _player)
 	{
-		foreach (BaseCard bc in player1Deck)
+		if ( _player == 1) 
 		{
-			if (bc.id == _id) return true;
+			foreach (BaseCard bc in player1Deck)
+			{
+				if (bc.id == _id) return true;
+			}
+		}
+		else if ( _player == 2) 
+		{
+			foreach (BaseCard bc in player2Deck)
+			{
+				if (bc.id == _id) return true;
+			}
 		}
 		
 		return false;
 	}
 	
-	public void SaveDeck ()
+	public void SavePlayerDeck ()
 	{
 		if (playerCards.Count < minimumCardsInDeck)
 		{
 			ShowWarning();
 			return;
 		}
+		
 		player1Deck = new List<BaseCard>();
+		player2Deck = new List<BaseCard>();
 		//GameObject currentPlayer = (player == 1) ? player1 : player2;
 		foreach (GameObject card in playerCards)
 		{
 			Card c = card.GetComponent<Card>();
 			
-			player1Deck.Add ( new BaseCard (c.id, c.cardType, c.cardPower, c.cardName) );
+			if (currentPlayer == 1) player1Deck.Add ( new BaseCard (c.id, c.cardType, c.cardPower, c.cardName) );
+			else if (currentPlayer == 2) player2Deck.Add ( new BaseCard (c.id, c.cardType, c.cardPower, c.cardName) );
 		}
 		
 		BinaryFormatter bf = new BinaryFormatter();
-		FileStream file = File.Create (Application.persistentDataPath + "/savegame.sav");
-		bf.Serialize(file, player1Deck);
+		FileStream file = File.Create (Application.persistentDataPath + "/player" + currentPlayer + ".deck");
+		
+		if (currentPlayer == 1) bf.Serialize(file, player1Deck);
+		else if (currentPlayer == 2) bf.Serialize(file, player2Deck);
+
+		
 		file.Close();
 	}
 	
-	public void Load() 
+	public void LoadPlayerDeck() 
 	{
-		if(File.Exists(Application.persistentDataPath + "/savegame.sav")) {
+		if(File.Exists(Application.persistentDataPath + "/player" + currentPlayer + ".deck")) {
 			BinaryFormatter bf = new BinaryFormatter();
-			FileStream file = File.Open(Application.persistentDataPath + "/savegame.sav", FileMode.Open);
-			player1Deck = (List<BaseCard>)bf.Deserialize(file);
+			FileStream file = File.Open(Application.persistentDataPath + "/player" + currentPlayer + ".deck", FileMode.Open);
+			if (currentPlayer == 1) player1Deck = (List<BaseCard>)bf.Deserialize(file);
+			else if (currentPlayer == 2) player2Deck = (List<BaseCard>)bf.Deserialize(file);
 			file.Close();
 		}
 		
-		foreach (BaseCard bc in player1Deck)
+		List<BaseCard> tmp = (currentPlayer == 1) ? player1Deck : player2Deck;
+		
+		foreach (BaseCard bc in tmp)
 		{
 			GameObject newCard = Instantiate (defaultCard);
 			newCard.transform.SetParent ( playerDeckPanel.transform );
@@ -148,6 +170,8 @@ public class DeckManager : MonoBehaviour {
 	{
 		prompt.SetActive ( false );
 	}
+	
+	public void Back () { Application.LoadLevelAsync ("Menu"); }
 	
 	public List<BaseCard> player1Deck = new List<BaseCard>();
 	public List<BaseCard> player2Deck = new List<BaseCard>();	
